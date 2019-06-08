@@ -2,7 +2,7 @@
 
 #SBATCH --partition=workq
 #SBATCH --ntasks=2
-#SBATCH --cpus-per-task=4
+#SBATCH --cpus-per-task=2
 #SBATCH --mem-per-cpu=5G
 #SBATCH --time=08:00:00
 #SBATCH --account=pawsey0106
@@ -11,13 +11,14 @@
 #SBATCH -o jupyter-%J.out
 
 module load shifter
+container=pangeo/pangeo-notebook:latest
 
 JNHOST=$(hostname)
 
 # Pull the container with the next line before submitting
-#sg $PAWSEY_PROJECT -c 'shifter pull pangeo/pangeo-notebook:latest'
+#sg $PAWSEY_PROJECT -c 'shifter pull $container'
 
-srun --export=ALL -n 1 -c 4 shifter run --writable-volatile=/run pangeo/pangeo-notebook \
+srun --export=ALL -n 1 -c $SLURM_CPUS_PER_TASK shifter --volume=/home/$USER:/home/jovyan --writable-volatile=/run --image=$container \
        dask-scheduler --scheduler-file $MYSCRATCH/scheduler.json &
 
 # Create trap to kill notebook when user is done
@@ -44,7 +45,7 @@ LOGFILE=$MYSCRATCH/pangeo_jupyter_log.$(date +%Y%m%dT%H%M%S)
 echo "Logging jupyter notebook session on $JNHOST to $LOGFILE"
 
 
-srun --export=ALL -n 1 -c 4 shifter run --writable-volatile=/run pangeo/pangeo-notebook \
+srun --export=ALL -n 1 -c $SLURM_CPUS_PER_TASK shifter --volume=/home/$USER:/home/jovyan --writable-volatile=/run --image=$container \
    jupyter lab --no-browser --ip=$JNHOST >& $LOGFILE &
 
 JNPID=$!
