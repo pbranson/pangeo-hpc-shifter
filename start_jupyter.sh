@@ -18,7 +18,8 @@ JNHOST=$(hostname)
 # Pull the container with the next line before submitting
 #sg $PAWSEY_PROJECT -c 'shifter pull $container'
 
-srun --export=ALL -n 1 -c $SLURM_CPUS_PER_TASK shifter --volume=/home/$USER:/home/jovyan --writable-volatile=/run --image=$container \
+srun --export=ALL -n 1 -c $SLURM_CPUS_PER_TASK shifter run --writable-volatile=/run --mount=type=per-node-cache,destination=/tmp,size=40GG,bs=1 \
+       $container \
        dask-scheduler --scheduler-file $MYSCRATCH/scheduler.json &
 
 # Create trap to kill notebook when user is done
@@ -45,7 +46,8 @@ LOGFILE=$MYSCRATCH/pangeo_jupyter_log.$(date +%Y%m%dT%H%M%S)
 echo "Logging jupyter notebook session on $JNHOST to $LOGFILE"
 
 
-srun --export=ALL -n 1 -c $SLURM_CPUS_PER_TASK shifter --volume=/home/$USER:/home/jovyan --writable-volatile=/run --image=$container \
+srun --export=ALL -n 1 -c $SLURM_CPUS_PER_TASK shifter run --writable-volatile=/run --writable-volatile=/home --mount=type=per-node-cache,destination=/tmp,size=40GG,bs=1  \
+    $container \
    jupyter lab --no-browser --ip=$JNHOST >& $LOGFILE &
 
 JNPID=$!

@@ -4,7 +4,7 @@
 #SBATCH --ntasks=4
 #SBATCH --cpus-per-task=4
 #SBATCH --mem-per-cpu=4G
-#SBATCH --time=08:00:00
+#SBATCH --time=02:00:00
 #SBATCH --account=pawsey0106
 #SBATCH --export=NONE
 #SBATCH -J dask-worker   # name
@@ -19,22 +19,24 @@ container=pangeo/pangeo-notebook:latest
 
 echo Memory limit is $memlim
 
-for i in 0 .. $SLURM_NTASKS
-do
+echo starting $SLURM_NTASKS workers with $SLURM_CPUS_PER_TASK CPUs each
+
+for i in `seq 1 $SLURM_NTASKS`;
+do 
     echo starting worker $i
-    srun --export=ALL -n 1 -c $SLURM_CPUS_PER_TASK \ 
-        shifter --volume=/home/$USER:/home/jovyan --writable-volatile=/run --image=$container \
+    srun --export=all -n $SLURM_NTASKS -N 1 -c $SLURM_CPUS_PER_TASK \ 
+        shifter run --writable-volatile=/run --mount=type=per-node-cache,destination=/tmp,size=40G,bs=1 $container \
         dask-worker --scheduler-file $MYSCRATCH/scheduler.json \
                     --nthreads $SLURM_CPUS_PER_TASK \
+                    --local-directory /tmp \
                     --memory-limit ${memlim}M &
-#                    --memory-spill-fraction False \
-#                    --memory-target-fraction False &
-    sleep 10
+    sleep 1
 done
 
-echo started workers
-
 sleep inf
+#                    --memory-spill-fraction False \
+#                    --memory-target-fraction False &
+
                    
   
 

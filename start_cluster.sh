@@ -1,12 +1,10 @@
 #!/bin/bash -l
 
 #SBATCH --partition=workq
-#SBATCH --ntasks=7
-#SBATCH --cpus-per-task=4
+#SBATCH --ntasks=6
+#SBATCH --cpus-per-task=2
 #SBATCH --mem-per-cpu=4000M
-#SBATCH --nodes=1
-##SBATCH --mem=60G
-#SBATCH --time=01:00:00
+#SBATCH --time=08:00:00
 #SBATCH --account=pawsey0106
 #SBATCH --export=NONE
 #SBATCH -J cluster   # name
@@ -20,7 +18,7 @@ JNHOST=$(hostname)
 # Pull the container with the next line before submitting
 #sg $PAWSEY_PROJECT -c 'shifter pull $container'
 
-srun --export=ALL -n 1 -c $SLURM_CPUS_PER_TASK shifter --volume=/home/$USER:/home/jovyan --writable-volatile=/run --image=$container \
+srun --export=all -n 1 -N 1 -c $SLURM_CPUS_PER_TASK shifter run --writable-volatile=/run --mount=type=per-node-cache,destination=/tmp,size=40G,bs=1 $container \
        dask-scheduler --scheduler-file $MYSCRATCH/scheduler.json &
 
 # Create trap to kill notebook when user is done
@@ -46,7 +44,7 @@ LOGFILE=$MYSCRATCH/pangeo_jupyter_log.$(date +%Y%m%dT%H%M%S)
 
 echo "Logging jupyter notebook session on $JNHOST to $LOGFILE"
 
-srun --export=ALL -n 1 -c $SLURM_CPUS_PER_TASK shifter --volume=/home/$USER:/home/jovyan --writable-volatile=/run --image=$container \
+srun --export=all -n 1 -N 1 -c $SLURM_CPUS_PER_TASK shifter run --writable-volatile=/home --writable-volatile=/run --mount=type=per-node-cache,destination=/tmp,size=10G,bs=1 $container \
    jupyter lab --no-browser --ip=$JNHOST >& $LOGFILE &
 
 JNPID=$!
@@ -88,17 +86,21 @@ To stop the server, press Ctrl-C.
 EOF
 
 mempcpu=$SLURM_MEM_PER_CPU
-mempcpu=2500
 memlim=$(echo $SLURM_CPUS_PER_TASK*$mempcpu*0.95 | bc)
 numworkers=$((SLURM_NTASKS-2))
 
 echo Worker memory limit is $memlim
 echo Starting $numworkers workers
 
-srun --export=ALL -n $numworkers -c $SLURM_CPUS_PER_TASK \
-    shifter --volume=/home/$USER:/home/jovyan --writable-volatile=/run --image=$container \
+for i in `seq 1 $SLURM_NTASKS`;
+do
+    echo starting worker $i
+
+    srun --export=all -n 1 -N 1 -c $SLURM_CPUS_PER_TASK \
+    shifter run --writable-volatile=/run --mount=type=per-node-cache,destination=/tmp,size=40G,bs=1 $container \
     dask-worker --scheduler-file $MYSCRATCH/scheduler.json \
                 --nthreads $SLURM_CPUS_PER_TASK \
+                --local-directory /tmp \
                 --memory-limit ${memlim}M &
 
 
