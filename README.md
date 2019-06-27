@@ -3,7 +3,7 @@ Scripts to run dask and jupyter lab on Shifter using the pangeo-notebook image
 
 The container is based on the pangeo-notebook image that is curated at https://github.com/pangeo-data/pangeo-stacks. 
 
-Turns out that Pawsey have recently written up some doco about using containers https://support.pawsey.org.au/documentation/display/US/Containers
+Pawsey have recently written up some doco about using containers https://support.pawsey.org.au/documentation/display/US/Containers
 
 Shifter (as opposed to Singularity) works directly on docker images and at Pawsey the mapping of the filesystesm is taken care of for you, which makes using shifter very convenient and works without modifying the image. (unlike when using singularity - see https://github.com/pbranson/pangeo-hpc-singularity). And you dont need to build the image, just pull it from docker.
 
