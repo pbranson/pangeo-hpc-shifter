@@ -7,7 +7,7 @@ Pawsey have recently written up some doco about using containers https://support
 
 Shifter (as opposed to Singularity) works directly on docker images and at Pawsey the mapping of the filesystesm is taken care of for you, which makes using shifter very convenient and works without modifying the image. (unlike when using singularity - see https://github.com/pbranson/pangeo-hpc-singularity). And you dont need to build the image, just pull it from docker.
 
-All in all this makes the calls to start the container simpler, and doesnt require sudo at any point in the process, which is good when working on HPC. In addition it deals with the volatile files directly rather than having to bind a writable folder as in singularity. 
+This makes the syntax to start the container simpler, and doesnt require sudo at any point in the process, which is good when working on HPC. In addition it deals with the volatile files directly rather than having to bind a writable folder as in singularity and yo
 
 ## Pull the container
 
