@@ -21,22 +21,7 @@ echo Memory limit is $memlim
 
 echo starting $SLURM_NTASKS workers with $SLURM_CPUS_PER_TASK CPUs each
 
-for i in `seq 1 $SLURM_NTASKS`;
-do 
-    echo starting worker $i
-    srun --export=all -n $SLURM_NTASKS -N 1 -c $SLURM_CPUS_PER_TASK \ 
-        shifter run --writable-volatile=/run --mount=type=per-node-cache,destination=/tmp,size=40G,bs=1 $container \
-        dask-worker --scheduler-file $MYSCRATCH/scheduler.json \
-                    --nthreads $SLURM_CPUS_PER_TASK \
-                    --local-directory /tmp \
-                    --memory-limit ${memlim}M &
-    sleep 1
-done
-
-sleep inf
-#                    --memory-spill-fraction False \
-#                    --memory-target-fraction False &
-
-                   
-  
-
+srun --export=ALL -n $SLURM_NTASKS -N 1 -c $SLURM_CPUS_PER_TASK \
+shifter run --writable-volatile=/run --mount=type=per-node-cache,destination=/tmp,size=4G,bs=1 $container \
+dask-worker --scheduler-file $MYSCRATCH/scheduler.json --nthreads $SLURM_CPUS_PER_TASK --memory-limit ${memlim}M --local-directory=/tmp 
+    
