@@ -3,11 +3,11 @@ Scripts to run dask and jupyter lab on Shifter using the pangeo-notebook image
 
 The container is based on the pangeo-notebook image that is curated at https://github.com/pangeo-data/pangeo-stacks. 
 
-Turns out that Pawsey have recently written up some doco about using containers https://support.pawsey.org.au/documentation/display/US/Containers
+Pawsey have recently written up some doco about using containers https://support.pawsey.org.au/documentation/display/US/Containers
 
 Shifter (as opposed to Singularity) works directly on docker images and at Pawsey the mapping of the filesystesm is taken care of for you, which makes using shifter very convenient and works without modifying the image. (unlike when using singularity - see https://github.com/pbranson/pangeo-hpc-singularity). And you dont need to build the image, just pull it from docker.
 
-All in all this makes the calls to start the container simpler, and doesnt require sudo at any point in the process, which is good when working on HPC. In addition it deals with the volatile files directly rather than having to bind a writable folder as in singularity. 
+This makes the syntax to start the container simpler, and doesnt require sudo at any point in the process, which is good when working on HPC. In addition it deals with the volatile files directly rather than having to bind a writable folder as in singularity. In addition you can mount a writeable "per-node-cache" into the container which is a single large file on the Lustre filesystem which can be used by dask-workers as a location to spill data when worker memory limits are exceeded. Because the lustre file system sees this as a single file, it doesnt adversely effect the filesystem. 
 
 ## Pull the container
 
