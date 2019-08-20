@@ -2,8 +2,8 @@
 
 #SBATCH --partition=workq
 #SBATCH --ntasks=6
-#SBATCH --cpus-per-task=2
-#SBATCH --mem-per-cpu=4000M
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=47G
 #SBATCH --time=08:00:00
 #SBATCH --account=pawsey0106
 #SBATCH --export=NONE
@@ -18,7 +18,7 @@ JNHOST=$(hostname)
 # Pull the container with the next line before submitting
 #sg $PAWSEY_PROJECT -c 'shifter pull $container'
 
-srun --export=all -n 1 -N 1 -c $SLURM_CPUS_PER_TASK shifter run --writable-volatile=/run --mount=type=per-node-cache,destination=/tmp,size=40G,bs=1 $container \
+srun --export=all -n 1 -N 1 -c $SLURM_CPUS_PER_TASK shifter run --writable-volatile=/run --mount=type=per-node-cache,destination=/tmp_file,size=40G,bs=1 $container \
        dask-scheduler --scheduler-file $MYSCRATCH/scheduler.json &
 
 # Create trap to kill notebook when user is done
@@ -44,7 +44,7 @@ LOGFILE=$MYSCRATCH/pangeo_jupyter_log.$(date +%Y%m%dT%H%M%S)
 
 echo "Logging jupyter notebook session on $JNHOST to $LOGFILE"
 
-srun --export=all -n 1 -N 1 -c $SLURM_CPUS_PER_TASK shifter run --writable-volatile=/home --writable-volatile=/run --mount=type=per-node-cache,destination=/tmp,size=10G,bs=1 $container \
+srun --export=all -n 1 -N 1 -c $SLURM_CPUS_PER_TASK shifter run --writable-volatile=/home --writable-volatile=/run --mount=type=per-node-cache,destination=/tmp_file,size=10G,bs=1 $container \
    jupyter lab --no-browser --ip=$JNHOST >& $LOGFILE &
 
 JNPID=$!
@@ -85,28 +85,22 @@ have set. SHARE TOKENS RARELY AND WISELY!
 To stop the server, press Ctrl-C.
 EOF
 
-mempcpu=$SLURM_MEM_PER_CPU
+
+mempcpu=$((SLURM_MEM_PER_NODE/SLURM_JOB_CPUS_PER_NODE))
 memlim=$(echo $SLURM_CPUS_PER_TASK*$mempcpu*0.95 | bc)
 numworkers=$((SLURM_NTASKS-2))
 
 echo Worker memory limit is $memlim
 echo Starting $numworkers workers
 
-for i in `seq 1 $SLURM_NTASKS`;
-do
-    echo starting worker $i
 
-    srun --export=all -n 1 -N 1 -c $SLURM_CPUS_PER_TASK \
-    shifter run --writable-volatile=/run --mount=type=per-node-cache,destination=/tmp,size=40G,bs=1 $container \
-    dask-worker --scheduler-file $MYSCRATCH/scheduler.json \
+srun --export=all -n $numworkers -c $SLURM_CPUS_PER_TASK \
+shifter run --writable-volatile=/run --mount=type=per-node-cache,destination=/tmp_file,size=40G,bs=1 $container \
+dask-worker --scheduler-file $MYSCRATCH/scheduler.json \
                 --nthreads $SLURM_CPUS_PER_TASK \
-                --local-directory /tmp \
+                --local-directory /tmp_file \
                 --memory-limit ${memlim}M &
-
 
 
 # Wait for user kill command
 sleep inf
-
-
-

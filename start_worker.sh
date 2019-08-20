@@ -1,10 +1,10 @@
 #!/bin/bash -l
 
 #SBATCH --partition=workq
-#SBATCH --ntasks=4
-#SBATCH --cpus-per-task=4
-#SBATCH --mem-per-cpu=4G
-#SBATCH --time=02:00:00
+#SBATCH --ntasks=10
+#SBATCH --cpus-per-task=2
+#SBATCH --mem-per-cpu=6G
+#SBATCH --time=2:00:00
 #SBATCH --account=pawsey0106
 #SBATCH --export=NONE
 #SBATCH -J dask-worker   # name
@@ -21,7 +21,7 @@ echo Memory limit is $memlim
 
 echo starting $SLURM_NTASKS workers with $SLURM_CPUS_PER_TASK CPUs each
 
-srun --export=ALL -n $SLURM_NTASKS -N 1 -c $SLURM_CPUS_PER_TASK \
-shifter run --writable-volatile=/run --mount=type=per-node-cache,destination=/tmp,size=4G,bs=1 $container \
-dask-worker --scheduler-file $MYSCRATCH/scheduler.json --nthreads $SLURM_CPUS_PER_TASK --memory-limit ${memlim}M --local-directory=/tmp 
+srun --export=ALL -n $SLURM_NTASKS -c $SLURM_CPUS_PER_TASK \
+shifter run --writable-volatile=/run --mount=type=per-node-cache,destination=/tmp_file,size=4G,bs=1 $container \
+dask-worker --scheduler-file $MYSCRATCH/scheduler.json --nthreads $SLURM_CPUS_PER_TASK --memory-limit ${memlim}M --local-directory=/tmp_file
     

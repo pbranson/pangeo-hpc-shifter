@@ -2,9 +2,9 @@
 
 #SBATCH --partition=workq
 #SBATCH --ntasks=2
-#SBATCH --cpus-per-task=2
-#SBATCH --mem-per-cpu=5G
-#SBATCH --time=08:00:00
+#SBATCH --cpus-per-task=4
+#SBATCH --mem-per-cpu=6G
+#SBATCH --time=24:00:00
 #SBATCH --account=pawsey0106
 #SBATCH --export=NONE
 #SBATCH -J jupyter   # name
@@ -18,7 +18,7 @@ JNHOST=$(hostname)
 # Pull the container with the next line before submitting
 #sg $PAWSEY_PROJECT -c 'shifter pull $container'
 
-srun --export=ALL -n 1 -c $SLURM_CPUS_PER_TASK shifter run --writable-volatile=/run --mount=type=per-node-cache,destination=/tmp,size=40GG,bs=1 \
+srun --export=ALL -n 1 -N 1 -c $SLURM_CPUS_PER_TASK shifter run --writable-volatile=/run --mount=type=per-node-cache,destination=/tmp,size=40G,bs=1 \
        $container \
        dask-scheduler --scheduler-file $MYSCRATCH/scheduler.json &
 
@@ -46,9 +46,9 @@ LOGFILE=$MYSCRATCH/pangeo_jupyter_log.$(date +%Y%m%dT%H%M%S)
 echo "Logging jupyter notebook session on $JNHOST to $LOGFILE"
 
 
-srun --export=ALL -n 1 -c $SLURM_CPUS_PER_TASK shifter run --writable-volatile=/run --writable-volatile=/home --mount=type=per-node-cache,destination=/tmp,size=40GG,bs=1  \
+srun --export=ALL -n 1 -N 1 -c $SLURM_CPUS_PER_TASK shifter run --writable-volatile=/run --writable-volatile=/home --mount=type=per-node-cache,destination=/tmp_file,size=40G,bs=1  \
     $container \
-   jupyter lab --no-browser --ip=$JNHOST >& $LOGFILE &
+   jupyter lab --no-browser --ip=$JNHOST --port=8890  --notebook-dir=$MYSCRATCH  >& $LOGFILE &
 
 JNPID=$!
 
