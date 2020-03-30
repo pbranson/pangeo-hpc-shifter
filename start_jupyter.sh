@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
 #SBATCH --partition=workq
-#SBATCH --ntasks=5
+#SBATCH --ntasks=2
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem-per-cpu=4G
@@ -13,8 +13,6 @@
 
 module load shifter
 container=pangeo/pangeo-notebook:latest
-
-JNHOST=$(hostname)
 
 # Pull the container with the next line before submitting
 #sg $PAWSEY_PROJECT -c 'shifter pull $container'
@@ -35,11 +33,9 @@ echo Memory limit is $memlim
 
 echo starting $SLURM_NTASKS workers with $SLURM_CPUS_PER_TASK CPUs each
 
-srun --export=ALL -n 3 -c $SLURM_CPUS_PER_TASK \
-    shifter run --writable-volatile=/run --mount=type=per-node-cache,destination=/tmp_file,size=4G,bs=1 $container \
-    dask-worker --scheduler-file $MYSCRATCH/scheduler.json --nthreads $SLURM_CPUS_PER_TASK --memory-limit ${memlim}M --local-directory=/tmp_file &
-
-
+#srun --export=ALL -n 3 -c $SLURM_CPUS_PER_TASK \
+#    shifter run --writable-volatile=/run --mount=type=per-node-cache,destination=/tmp_file,size=4G,bs=1 $container \
+#    dask-worker --scheduler-file $MYSCRATCH/scheduler.json --nthreads $SLURM_CPUS_PER_TASK --memory-limit ${memlim}M --local-directory=/tmp_file &
 
 
 # Create trap to kill notebook when user is done
@@ -55,7 +51,7 @@ kill_server() {
 }
 
 let DASK_PORT=8787
-let LOCALHOST_PORT=8899
+let LOCALHOST_PORT=8888
 
 JNHOST=$(hostname)
 JNIP=$(hostname -i)
@@ -64,13 +60,12 @@ LOGFILE=$MYSCRATCH/pangeo_jupyter_log.$(date +%Y%m%dT%H%M%S)
 
 
 
-
 echo "Logging jupyter notebook session on $JNHOST to $LOGFILE"
 
 
 srun --export=ALL -n 1 -N 1 -c $SLURM_CPUS_PER_TASK shifter run --writable-volatile=/run --writable-volatile=/home --mount=type=per-node-cache,destination=/tmp_file,size=40G,bs=1  \
     $container \
-    jupyter lab --no-browser --ip=$JNHOST --port=8899  --notebook-dir=$MYGROUP  >& $LOGFILE &
+    jupyter lab --no-browser --ip=$JNHOST --notebook-dir=$MYGROUP  >& $LOGFILE &
 
 JNPID=$!
 
